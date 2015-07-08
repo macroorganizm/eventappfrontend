@@ -1,0 +1,27 @@
+
+<ion-view view-title="expenses">
+  <ion-content class="padding">
+    
+    <ion-list>
+      <div ng-if="msg" class="bar bar-subheader"><h2 class="title">{{msg}}</h2></div>
+      <div class="item">
+      	<a class="button button-full button-positive" href="#/app/addexpense/{{currentEventId}}">Add expense</a>
+      </div>
+	  
+      <div class="item" ng-repeat="expense in expensesList" ng-click = "showExpense('{{expense.id}}', '{{currentEventId}}')">
+        <!--img ng-src=""-->
+		<div class="divleft">
+			<h2>{{expense.name}}</h2>
+			<p>{{expense.details}} </p>
+			<p>Comments : {{expense.comments}} </p>
+		</div>
+		<div class="divright" ng-if="expense.isOwner == 1">
+			<button class="button button-positive" ng-click = "editExpense('{{expense.id}}', '{{currentEventId}}'); $event.stopPropagation();">
+				Edit
+			</button>
+		</div>
+		
+      </div>
+    </ion-list>
+  </ion-content>
+</ion-view>

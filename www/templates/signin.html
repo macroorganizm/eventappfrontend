@@ -1,0 +1,25 @@
+<ion-view view-title="Please enter">
+  <ion-content class="padding">
+    <div ng-if="!logined">
+		<div class="list">
+		  <label class="item item-input">
+			<input type="text" ng-model="login" placeholder="Login">
+		  </label>
+		  <label class="item item-input">
+			<input type="text" ng-model="pass" placeholder="Password">
+		  </label>
+		  <button ng-click="signIn(login, pass)" class="button button-positive" >Log In</button>
+		  <a class="button button-positive" href="#/app/signin/regform">Register</a>
+		</div>
+	</div>
+	<div ng-if="logined">
+		<div class="list">
+		  <label class="item item-input">
+			Y are is already logined!
+		  </label>
+		  <button ng-click="signIn(login, pass)" class="button button-positive" >Log In</button>
+		  <a class="button button-positive" href="#/app/signin/regform">Register</a>
+		</div>
+	</div>
+  </ion-content>
+</ion-view>

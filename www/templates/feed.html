@@ -1,0 +1,23 @@
+
+<ion-view view-title="Feed">
+  <ion-content class="padding">
+    
+    <ion-list show-delete="shouldShowDelete" can-swipe="listCanSwipe">
+	  <div ng-if="msg != ''" class="bar bar-subheader"><h2 class="title">{{msg}}</h2></div>
+	  <ion-item ng-repeat="feed in feedsList" ng-click = "linkTo('{{feed.type}}', '{{feed.id}}')">
+
+		<div class="divleft" style="white-space: normal;">
+          
+		
+		  <b >{{feed.name}} : {{feed.actions.adding.length + feed.actions.editing.length + feed.actions.approving.length + feed.actions.commenting.length}}</b>
+		</div>
+        
+        <ion-option-button class="button button-large button-assertive" ng-click="clearFeedBy('{{feed.type}}', '{{feed.id}}')"> Clear
+    	</ion-option-button>	
+	  </ion-item>
+
+	  
+
+    </ion-list>
+  </ion-content>
+</ion-view>

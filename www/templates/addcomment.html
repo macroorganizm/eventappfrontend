@@ -1,0 +1,21 @@
+<ion-view view-title="Add new event">
+  <ion-content class="padding">
+  <form name="AddExpenseCommentForm">
+    <div class="list">
+	  <label class="item item-input">
+        <textarea ng-model="comment.text" placeholder="Enter your comment"></textarea> 		
+      </label>
+	  <label class="item item-input">
+        <ion-checkbox ng-model="comment.isImportant" >
+		  Mark as important(it will be highlighted)
+        </ion-checkbox> 		
+      </label>
+      
+	  
+	  <button type="submit" ng-click="addComment(comment, '{{currentExpenseId}}')" class="button button-positive" >Add comment</button>
+
+
+	</div>
+	</form>
+  </ion-content>
+</ion-view>

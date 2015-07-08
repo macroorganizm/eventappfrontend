@@ -1,0 +1,27 @@
+
+<ion-view view-title="events">
+  <ion-content class="padding">
+    
+    <ion-list>
+    <div ng-if="msg" class="bar bar-subheader"><h2 class="title">{{msg}}</h2></div>
+      <div class="item">
+        <a class="button button-full button-positive" href="#/app/addevent">Add event</a>
+      </div>  
+
+	    
+      <!--div class="item item-avatar" ng-repeat="evnt in eventsList" ng-click = "showEventExpences('{{evnt.id}}')"-->
+	    <div class="item item-avatar" ng-repeat="evnt in eventsList" ng-click = "showOptionsList('{{evnt.id}}', {{evnt.isOwner}})">
+        <!--img ng-src=""-->
+		    <h2>{{evnt.name}}</h2>
+        <p>{{evnt.desc}}<span>({{evnt.friendsCount}} friends)</span>
+           <!--span ng-class="evnt.isOwner == 1 ? 'button button-icon icon ion-settings' : 'button button-icon icon ion-search'" ng-click = "editEvent('{{evnt.id}}'); $event.stopPropagation()"></span-->
+           
+        </p>
+      </div>
+      <div class="item">
+        <button class="button button-full button-assertive" ng-click ="showArchivedEvents()" >Archived events</button>
+      </div> 
+	  
+    </ion-list>
+  </ion-content>
+</ion-view>

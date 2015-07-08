@@ -1,0 +1,21 @@
+
+<ion-view view-title="Friends">
+  <ion-content class="padding">
+
+    <ion-list>
+	  
+	  <p>
+	    <label class="item item-input">
+	      <input type="text" ng-model="friend" placeholder="Login">
+		</label>
+		<button ng-click="addFriend(friend)" class="button button-positive" >Add friend</button>
+	  </p>
+	  <p>{{msg}}</p>
+      <p class="item item-avatar" ng-repeat="myfriend in friends" ng-click="show('{{myfriend.id}}')">
+        <!--img ng-src=""-->
+        <b>{{myfriend.name}}</b>
+        
+      </p>
+    </ion-list>
+  </ion-content>
+</ion-view>

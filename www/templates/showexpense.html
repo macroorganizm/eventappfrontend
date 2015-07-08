@@ -1,0 +1,76 @@
+<ion-view view-title="expenses">
+  <ion-content class="padding">
+    <div class="item">
+			<div class="divleft">
+	    
+		    <h2>{{expenseName}}</h2>
+			  <p>Creator: <b>{{expenseOwner}}</b></p>
+		  </div>
+		  <div class="divrightbord" ng-click = "toggleFeedInfo()">
+	    
+		      <b>New : {{ feed.adding.length + feed.editing.length + feed.approving.length + feed.commenting.length}}</b>
+		  </div>
+		</div>
+		<div class="item" ng-show="feedInfo">
+
+		    <b>  <p ng-if="feed.adding.length > 0">New users : {{feed.adding.length}}</p>
+	      	<p ng-if="feed.editing.length > 0">New edits : {{feed.editing.length}}</p>
+	      	<p ng-if="feed.approving.length > 0">Approving changed : {{feed.approving.length}}</p>
+	      	<p ng-if="feed.commenting.length > 0">New comments : {{feed.commenting.length}}</p></b>
+			<p ng-repeat="item in feed.all">
+				{{item.date}} : {{item.text}}
+			</p>	
+			<button class="button button-assertive" ng-click="clearFeedBy('expense', '{{expenseId}}')"> Clear
+    	</button>
+
+		</div>
+	  <div class="item" ng-repeat="item in details">
+        <!--img ng-src=""-->
+		<div class="divleft">
+			{{item.subjectName}}:&nbsp;
+			<span ng-class="item.isApproved ? 'balanced' : 'assertive'"><b>{{item.amount}}</b></span>
+			
+			
+		</div>
+		<div class="divright" ng-if="item.ownSubject">
+			<span ng-if="item.isApproved">
+			  <button class="button button-assertive" ng-click = "toggleApprove('{{item.detailId}}', '{{expenseId}}');">
+				Unaprove
+			  </button>
+			</span>
+			<span ng-if="!item.isApproved">
+			  <button class="button button-balanced" ng-click = "toggleApprove('{{item.detailId}}', '{{expenseId}}');">
+				Approve
+			  </button>
+			</span>
+			
+		</div>
+		
+      </div>
+	  <h3>
+		<span class="assertive">{{unapprovedAmount}}</span>&nbsp;+&nbsp;
+		<span class="balanced">{{approvedAmount}}</span>&nbsp;=&nbsp;
+		{{unapprovedAmount+approvedAmount}}
+	  </h3>
+	<ion-list>
+	  <div class="item">
+		<h3 class="assertive">{{msg}}</h3>
+	  </div>
+	  <div class="item">
+		<a class="button button-full button-positive" href="#/app/addcomment/{{expenseId}}">Add comment</a>
+	  </div>
+	  <div class="item">
+		  <ul>
+		    <li ng-repeat="comment in comments" ng-class="comment.isImportant ? 'assertive' : 'positive'">
+			<p><b>{{comment.commentator}}</b><i>{{comment.date}}</i></p>
+			<div style="white-space: normal;">
+				{{comment.text}}
+			</div>
+			
+			</li>
+		  </ul>
+			
+	  </div>
+    </ion-list>
+  </ion-content>
+</ion-view>

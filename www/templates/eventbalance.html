@@ -1,0 +1,39 @@
+<ion-view view-title="events">
+  <ion-content class="padding">
+    
+    <ion-list>
+	  <div class="item">
+		  <table class="myiontable">
+			<tr>
+			  <td colspan="4">You own</td>
+			</tr>
+			<tr>
+			  <td></td><td>Owner</td><td class="balanced">Approved</td><td class="assertive">Unapproved</td>
+			</tr>
+			<tr ng-repeat="expense in expensesSubject">
+			  <td>{{expense.expenseName}}</td>
+			  <td>{{expense.expenseOwner}}</td>
+			  <td class="balanced">{{expense.approved}}</td>
+			  <td class="assertive">{{expense.unapproved}}</td>
+			</tr>
+		  </table>
+	  </div>
+	  <div class="item">
+		  <table class="myiontable">
+			<tr>
+			  <td colspan="4">You paid</td>
+			</tr>
+			<tr>
+			  <td></td><td>Owner</td><td class="balanced">Approved</td><td class="assertive">Unapproved</td>
+			</tr>
+			<tr ng-repeat="expense in expensesOwner">
+			  <td>{{expense.expenseName}}</td>
+			  <td>{{expense.expenseOwner}}</td>
+			  <td class="balanced">{{expense.approved}}</td>
+			  <td class="assertive">{{expense.unapproved}}</td>
+			</tr>
+		  </table>
+	  </div>
+    </ion-list>
+  </ion-content>
+</ion-view>

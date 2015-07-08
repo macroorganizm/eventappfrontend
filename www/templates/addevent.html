@@ -1,0 +1,31 @@
+<ion-view view-title="Add new event">
+  <ion-content class="padding">
+  <form name="AddEventForm">
+    <div class="list">
+	  <label class="item item-input">
+        <input type="text" ng-model="event.name" placeholder="Event Name"> 		
+      </label>
+      <label class="item item-input">
+        <input type="text" ng-model="event.description" placeholder="Description">
+      </label>
+	  <!--label class="item item-input item-select">
+		<div class="input-label">
+      Lightsaber
+    </div>
+    <select ng-model="event.friends" ng-options="friend.name for friend in friends"></select>
+  </label-->
+  <label class="item">
+  Select friends:<b>{{msg}}</b>
+  <ion-checkbox ng-repeat="friend in friends"
+                      ng-model="friend.checked" 
+                      ng-checked="friend.checked">
+          {{ friend.name }}
+        </ion-checkbox>
+    
+                
+</label>
+	  <button type="submit" ng-click="addEvent(event, friends)" class="button button-positive" >Add event</button>
+	</div>
+	</form>
+  </ion-content>
+</ion-view>

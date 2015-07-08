@@ -1,0 +1,49 @@
+<ion-view view-title="Add new event">
+  <ion-content class="padding">
+  <form name="AddExpenseForm">
+    <div class="list">
+	  <label class="item item-input">
+        <input type="text" ng-model="expense.name" placeholder="Expense Name"> 		
+      </label>
+      
+	  <!--label class="item item-input item-select">
+		<div class="input-label">
+      Lightsaber
+    </div>
+    <select ng-model="event.friends" ng-options="friend.name for friend in friends"></select>
+  </label-->
+    <div class="item">
+      <h2>Select friends: </h2>
+	  <b>{{msg}}</b>
+	
+	  <table>
+	    
+		<tr><td width="70%">Name</td><td>Amount</td><td></td></tr>
+		<tr ng-repeat="member in eventMembers">
+		  <td>{{ member.name }}</td>
+		  <td>
+		    <input class="item-input" type="text" ng-model="member.amount" size="8" placeholder="0">
+	      </td>
+		  <td>
+		    <span class="balanced" ng-if="member.isApproved">
+			  Approved
+			</span>
+	      </td>
+		</tr>
+	  </table>
+	</div>	
+		  
+		  
+		
+    
+		
+	  <div ng-if="!expense.id">
+		<button type="submit" ng-click="addExpense(expense, eventMembers)" class="button button-positive" >Add expense</button>
+      </div>
+	  <div ng-if="expense.id">
+		<button type="submit" ng-click="editExpense(expense, eventMembers)" class="button button-positive" >Edit expense</button>
+      </div>
+	</div>
+	</form>
+  </ion-content>
+</ion-view>

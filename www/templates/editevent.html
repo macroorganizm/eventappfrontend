@@ -1,0 +1,51 @@
+<ion-view view-title="Edit event">
+  <ion-content class="padding">
+  <div ng-if="isEventOwner">
+    <form name="AddEventForm">
+    <div class="list">
+	  <label class="item item-input">
+        <input type="text" ng-model="event.name" placeholder="Event Name"> 		
+      </label>
+      <label class="item item-input">
+        <input type="text" ng-model="event.description" placeholder="Description">
+      </label>
+	  
+      <label class="item">
+         Select friends:<b>{{msg}}</b>
+         <ion-checkbox ng-repeat="friend in eventMembers"
+                      ng-model="friend.checked" 
+                      ng-checked="friend.checked">
+          {{ friend.name }} 
+		  <span ng-if="friend.notFriend">(Not in contacts list)</span>
+        </ion-checkbox>
+    
+                
+      </label>
+	  <label class="item">
+	  <ion-toggle ng-model="event.active" toggle-class="toggle-calm">Active event</ion-toggle>
+	  </label>
+	  <button type="submit" ng-click="editEvent(event, eventMembers)" class="button button-positive" >Save</button>
+	</div>
+	</form>
+  </div>
+  <div ng-if="!isEventOwner">
+    <div class="list">
+	  <label class="item">
+        <h2>Name : {{event.name}}</h2> 		
+      </label>
+      <label class="item">
+        <h2>Description : {{event.description}}</h2> 		
+      </label>
+      <label class="item">
+	  <h2>Event members</h2>
+        <ol >
+			<li ng-repeat="friend in eventMembers">{{friend.name}}</li>
+		</ol>
+    
+                
+      </label>
+    <!-- code to render a large video block-->
+  </div>
+  
+  </ion-content>
+</ion-view>

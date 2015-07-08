@@ -1,0 +1,19 @@
+<ion-view view-title="Registration form">
+  <ion-content class="padding">
+  <form name="RegForm">
+    <div class="list">
+	  <label class="item item-input">
+        <input type="text" ng-model="user.login" onchange="angular.element(this).scope().checkLogin(this.value)" placeholder="Login"> 		
+        
+	  </label>
+      <label class="item item-input">
+        <input type="text" ng-model="user.password" placeholder="Password">
+      </label>
+	  <label class="item item-input">
+        <input type="text" ng-model="user.verifypass" placeholder="Verify Password">
+      </label>
+	  <button type="submit" ng-click="register(user, RegForm)" class="button button-positive" >Reg Me</button>
+	</div>
+	</form>
+  </ion-content>
+</ion-view>

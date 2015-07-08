@@ -1,0 +1,21 @@
+/* Empty. Add your own CSS if you like */
+.divleft{    
+    width: 70%;
+    float: left;
+}
+.divright{    
+    width: 30%; 
+    margin-left: 70%;
+}
+.divrightbord{    
+    width: 30%; 
+    margin-left: 70%;
+    border: 1px solid;
+    height : 50px;
+    text-align: center;
+}
+.myiontable td{
+  border : 1px solid;
+  margin : 5px;
+  padding : 5px;
+}
