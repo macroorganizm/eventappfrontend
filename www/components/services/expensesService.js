@@ -51,6 +51,59 @@ applicationServices.factory('expensesService', function($http, $state, $q) {
       
       return deferred.promise;
     },
+    getExpense: function(expenseId, callback) {
+      var expense = {};
+      var members = {};
+      var params = '&expenseId=' + expenseId;
+
+      execGetRequest($http, $state, 'getexpense', params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          callback(null, data);
+        } else {
+          callback('Recieving Expense data error');
+        }
+      });
+
+    },
+    add: function(params, callback) {
+      execPostRequest($http, $state, 'addexpense', params, function(data) {
+        if (data.status == 'Expense create') {
+          callback(null, data.newExpId);
+        } else {
+          callback('We got an error here, try later');
+        }
+      });
+
+    },
+    edit: function(params, callback) {
+      execPostRequest($http, $state, 'editexpense', params, function(data) {
+        console.log(data);
+        if (data.status == 'saved') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      });
+
+    },
+    approve: function(detailId, expenseId, cb) {
+
+      var postArray = {
+        detailId: detailId, //id êîíêðåòíîãî ñóáúåêòà, ÊÒÎ äîëæåí äåíåã
+        expenseId: expenseId
+      };
+
+      execPostRequest($http, $state, 'approve', postArray, function(data) {
+        if (data.status == 'approved') {
+          cb();
+          return;
+        } else {
+          cb('We got an error here, try later');
+        }
+      });
+
+    },
     getExpenseData: function(expenseId) {
       
       var deferred = $q.defer();

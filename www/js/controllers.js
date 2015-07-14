@@ -67,7 +67,7 @@ function execGetRequest(http, state, action, params, successCallback) {
     state.go('app.signin');
     return;
   }
-  http.get('http://localhost:3000/?act=' + action + params + '&userId=' + userData.id)
+  http.get('http://localhost:3000/?act=' + action + params + '&userId=' + userData.id + '&token=' + userData.token)
     .success(function(data) {
       successCallback(data);
     })
@@ -87,7 +87,7 @@ function execPostRequest(http, state, action, postData, successCallback) {
   var postArray = postData;
   postArray.ownerId = userData.id;
 
-  http.post('http://localhost:3000/?act=' + action, postArray, {
+  http.post('http://localhost:3000/?act=' + action + '&token=' + userData.token, postArray, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -118,225 +118,25 @@ function normalizeDate(date) {
   var dateString = day + '.' + month + '.' + year + ' at ' + hours + ':' + minutes;
   return dateString;
 }
-application.controller('AddCommentCtrl', function($scope, $state, $http, $stateParams, $ionicPopup) {
+application.controller('AddCommentCtrl', function($scope, $state, commentsService, $stateParams, $ionicPopup) {
   $scope.currentExpenseId = $stateParams.expenseId;
-  //console.log(currentExpenseId);
 
   $scope.addComment = function(comment, expenseId) {
-    //console.log(comment);
-    //console.log(expenseId);
+
     if (isUndef(comment) || isUndef(comment.text)) {
       showAlert('error', 'You want to send a nothing? Realy?', $ionicPopup);
       return;
     }
-    var isImportant = (isUndef(comment.isImportant)) ? false : comment.isImportant;
-    //console.log(comment.text, isImportant);
-    var postArray = {
-      commentText: comment.text,
-      expenseId: expenseId,
-      isImportant: isImportant
-    };
 
-    execPostRequest($http, $state, 'addexpensecomment', postArray, function(data) {
-      if (data.status == 'saved') {
+    commentsService.addComment(comment, expenseId, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);        
+      } else {
         $state.go('app.showexpense', {
           expenseId: expenseId
         });
-      } else {
-        showAlert('error', 'We got an error here, try later', $ionicPopup);
       }
-    });
-  };
-});
-application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateParams, $ionicPopup) {
-  var currentEventId = $stateParams.eventId;
-  //console.log($stateParams);
-  $scope.eventMembers = [];
-  $scope.expense = {
-    action: 'create'
-  };
-  execGetRequest($http, $state, 'geteventmembers', '&eventId=' + currentEventId, function(data) {
-    if (data.status == 'ok') {
-
-      for (friend in data.eventMembers) {
-        var currentMember = data.eventMembers[friend];
-        $scope.eventMembers.push({
-          id: currentMember.id,
-          name: currentMember.name
-        });
-      }
-
-      //$scope.eventMembers = data.eventMembers;
-    }
-    //console.log($scope.eventMembers);
-  });
-
-  if (!$stateParams.expenseId) {
-    //adding
-
-  } else {
-    var params = '&expenseId=' + $stateParams.expenseId + '&eventId=' + currentEventId;
-
-    execGetRequest($http, $state, 'getexpense', params, function(data) {
-      //console.log(userData.id);
-      if (data.status == 'ok') {
-        $scope.expense.name = data.expense.name;
-        $scope.expense.id = data.expense._id;
-        var subjects = {};
-        data.expense.details.forEach(function(subject) {
-          //ôîðìèðóåòñÿ ìàññèâ óæå èìåþùèõñÿ ñóáúåêòîâ, äëÿ äàëüíåéøåé ïðîâåðêè ñðåäè
-          //âñåõ ïîòåíöèàëüíûõ ñóáúåêòîâ äîëãà 
-          subjects[subject.memberId._id] = {
-            amount: subject.amount,
-            isApproved: subject.isApproved
-          };
-        });
-        console.log(subjects);
-        $scope.eventMembers.forEach(function(potentialMember) {
-          if (isUndef(subjects[potentialMember.id])) {
-
-          } else {
-            potentialMember.amount = subjects[potentialMember.id].amount;
-            potentialMember.isApproved = subjects[potentialMember.id].isApproved;
-          }
-        });
-
-      } else {
-        console.log(data);
-      }
-    });
-
-  }
-
-  $scope.addExpense = function(expenseData, expenseMembers) {
-    if (isUndef(expenseData) || isUndef(expenseData.name)) {
-      showAlert('error', 'All fields are required', $ionicPopup);
-      return;
-    }
-
-    if (!(/^[a-zA-Z0-9 ,.!?]{8,}$/.test(expenseData.name))) {
-      showAlert('error', 'Event name should contain latin characters, letters, numbers? space or !?., symbols and length more 8 symbols', $ionicPopup);
-      return;
-    }
-
-    var checkedMembers = [];
-
-    for (member in expenseMembers) {
-      var currentMember = expenseMembers[member];
-
-      if (isUndef(currentMember.amount) || currentMember.amount <= 0) {
-        continue;
-      }
-      if (isNaN(currentMember.amount)) {
-        showAlert('error', 'Amount field should be a numeric', $ionicPopup);
-        return;
-      }
-      checkedMembers.push({
-        memberId: currentMember.id,
-        amount: currentMember.amount
-      });
-    }
-    var totalAmount = checkedMembers.reduce(function(sum, current) {
-      return sum + parseFloat(current.amount);
-    }, 0);
-
-    $ionicPopup.show({
-      template: 'Create new expense for ' + checkedMembers.length + ' members, total amount : ' + totalAmount + '?',
-      title: 'Confirm',
-      scope: $scope,
-      buttons: [{
-        text: 'No'
-      }, {
-        text: '<b>Yes</b>',
-        type: 'button-positive',
-        onTap: function() {
-          var postArray = {
-            expenseData: expenseData,
-            eventId: currentEventId,
-            checkedMembers: checkedMembers
-          };
-          execPostRequest($http, $state, 'addexpense', postArray, function(data) {
-            if (data.status == 'Expense create') {
-
-              $state.go('app.showexpense', {
-                eventId: currentEventId,
-                expenseId: data.newExpId
-              });
-            } else {
-              showAlert('error', 'We got an error here, try later', $ionicPopup);
-            }
-          });
-        }
-      }]
-    });
-
-
-  };
-
-  $scope.editExpense = function(expenseData, expenseMembers) {
-    if (isUndef(expenseData) || isUndef(expenseData.name) || isUndef(expenseData.id)) {
-      showAlert('error', 'All fields are required', $ionicPopup);
-      return;
-    }
-
-    if (!(/^[a-zA-Z0-9 ,.!?]{8,}$/.test(expenseData.name))) {
-      showAlert('error', 'Event name should contain latin characters, letters, numbers? space or !?., symbols and length more 8 symbols', $ionicPopup);
-      return;
-    }
-
-    var checkedMembers = [];
-
-    for (member in expenseMembers) {
-      var currentMember = expenseMembers[member];
-
-      if (isUndef(currentMember.amount) || currentMember.amount <= 0) {
-        continue;
-      }
-      if (isNaN(currentMember.amount)) {
-        showAlert('error', 'Amount field should be a numeric', $ionicPopup);
-        return;
-      }
-      checkedMembers.push({
-        memberId: currentMember.id,
-        amount: currentMember.amount
-      });
-    }
-    var totalAmount = checkedMembers.reduce(function(sum, current) {
-      return sum + parseFloat(current.amount);
-    }, 0);
-
-    $ionicPopup.show({
-      template: 'Update new expense for ' + checkedMembers.length + ' members, total amount : ' + totalAmount + '? All approved subjects will be reseted.',
-      title: 'Confirm',
-      scope: $scope,
-      buttons: [{
-        text: 'No'
-      }, {
-        text: '<b>Yes</b>',
-        type: 'button-positive',
-        onTap: function() {
-          var postArray = {
-            expenseData: expenseData,
-            eventId: currentEventId,
-            checkedMembers: checkedMembers
-          };
-          //console.log(postArray);
-
-          execPostRequest($http, $state, 'editexpense', postArray, function(data) {
-            if (data.status == 'saved') {
-              $state.go('app.showexpense', {
-                eventId: currentEventId,
-                expenseId: expenseData.id
-              });
-            } else {
-              showAlert('error', 'We got an error here, try later', $ionicPopup);
-            }
-          });
-        }
-      }]
-    });
-
-
+    })
   };
 });
 application.controller('AppCtrl', function($scope, $http, $state) {
@@ -571,15 +371,25 @@ application.controller('EventEditCtrl', function($scope, $state, $http, $statePa
   }
 
   function updateEvent(event, selectedFriends) {
-
+    console.log('newupdate');
+    eventService.edit(event, selectedFriends, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);      
+      } else {
+        $state.go('app.events');
+        return;
+      }
+    })
+  
+/*
     var postArray = {
       eventData: event,
       ownerId: userData.id,
       friendsInEvent: selectedFriends
     };
-    /*
+    
     console.log(postArray);
-    return;*/
+    return;
 
     $http.post('http://localhost:3000/?act=editevent', postArray, {
         headers: {
@@ -597,7 +407,7 @@ application.controller('EventEditCtrl', function($scope, $state, $http, $statePa
           showAlert('error', 'We got an error here, try later', $ionicPopup);
           return;
         }
-      });
+      });*/
 
   }
 });
@@ -747,12 +557,23 @@ application.controller('EventsCtrl', function($scope, $http, $state, $stateParam
 
     */
   function createEvent(eventData, friendsInEvent) {
-    console.log(eventData);
+    
+    eventService.add(eventData, friendsInEvent, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);      
+      } else {
+        $state.go('app.events');
+        return;
+      }
+    })
+/*
     var postArray = {
       eventData: eventData,
       ownerId: userData.id,
       friendsInEvent: friendsInEvent
     };
+
+
 
     $http.post('http://localhost:3000/?act=addevent', postArray, {
         headers: {
@@ -771,7 +592,7 @@ application.controller('EventsCtrl', function($scope, $http, $state, $stateParam
           showAlert('error', 'We got an error here, try later', $ionicPopup);
           return;
         }
-      });
+      });*/
   }
 });
 application.controller('ExpensesCtrl', function($scope, $state, $http, $stateParams, $ionicPopup, expensesService, feedsService, $ionicHistory) {
@@ -798,6 +619,8 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
       $scope.feedInfo = !$scope.feedInfo;
     }
 
+
+    // TODO : new interface in Service. Migrate
     var expensePromiseObj = expensesService.getExpenseData(expenseId);
     expensePromiseObj.then(function(expense){
     //  console.log(expense);
@@ -832,6 +655,17 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
     }
   }
   $scope.toggleApprove = function(detailId, expenseId) {
+
+    expensesService.approve(detailId, expenseId, function(err, res) {
+      if (err) {
+        showAlert('error', 'We got an error here, try later', $ionicPopup);
+      } else {
+        $state.go($state.current, {}, {
+          reload: true
+        });
+      }
+    });
+    /*
     var postArray = {
       detailId: detailId, //id êîíêðåòíîãî ñóáúåêòà, ÊÒÎ äîëæåí äåíåã
       expenseId: expenseId
@@ -847,8 +681,9 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
         showAlert('error', 'We got an error here, try later', $ionicPopup);
         return;
       }
-    });
+    });*/
   }
+
 
   $scope.showExpense = function(expenseId, eventId) {
     $state.go('app.showexpense', { /*eventId : eventId,*/
@@ -949,7 +784,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
             type: 'button-positive',
             onTap: function() {
               //console.log(selectedFriendId);
-              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId)
+              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId+'&token=' + userData.token)
                 .success(function(data, status, headers, config) {
                   //console.log(data);
                   getFriendsList();
@@ -968,7 +803,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
 
   $scope.addFriend = function(friendLogin) {
 
-    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin)
+    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         for (friend in contactList) {
           if (contactList[friend].id == data.friendId) {
@@ -989,7 +824,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
               text: '<b>Yes</b>',
               type: 'button-positive',
               onTap: function() {
-                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId)
+                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId+'&token=' + userData.token)
                   .success(function(data, status, headers, config) {
                     console.log(data);
                     getFriendsList();
@@ -1010,7 +845,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
   };
 
   function getFriendsList() {
-    $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id)
+    $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         console.log(data.friendsList);
         if (isEmpty(data.friendsList)) {
@@ -1030,6 +865,282 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
   getFriendsList();
 
 
+});
+application.controller('ManageExpenseController', function($scope, $state, $http, $stateParams, $ionicPopup, eventService, expensesService) {
+  var currentEventId = $stateParams.eventId;
+  //console.log($stateParams);
+  $scope.eventMembers = [];
+  $scope.expense = {
+    action: 'create'
+  };
+  //console.log("Manage");
+
+  eventService.getEventMembers(currentEventId, function(err, res) {
+    if (err) {
+      console.log(err);
+    } else {
+      //console.log('WE GOT ALL');
+      $scope.eventMembers = res;
+    }
+    
+  });
+
+  
+
+  if (!$stateParams.expenseId) {
+    //adding
+
+  } else {
+    /*var params = '&expenseId=' + $stateParams.expenseId + '&eventId=' + currentEventId;
+
+    execGetRequest($http, $state, 'getexpense', params, function(data) {
+      //console.log('native getting');
+      //console.log(data);
+
+
+      if (data.status == 'ok') {
+        $scope.expense.name = data.expense.name;
+        $scope.expense.id = data.expense._id;
+        var subjects = {};
+        data.expense.details.forEach(function(subject) {
+          //ôîðìèðóåòñÿ ìàññèâ óæå èìåþùèõñÿ ñóáúåêòîâ, äëÿ äàëüíåéøåé ïðîâåðêè ñðåäè
+          //âñåõ ïîòåíöèàëüíûõ ñóáúåêòîâ äîëãà 
+          subjects[subject.memberId._id] = {
+            amount: subject.amount,
+            isApproved: subject.isApproved
+          };
+        });
+        //console.log(subjects);
+        $scope.eventMembers.forEach(function(potentialMember) {
+          if (isUndef(subjects[potentialMember.id])) {
+
+          } else {
+            potentialMember.amount = subjects[potentialMember.id].amount;
+            potentialMember.isApproved = subjects[potentialMember.id].isApproved;
+          }
+        });
+
+      } else {
+        console.log(data);
+
+      }
+    });
+*/
+
+/**
+* receiving data of one expense for filing editing form
+*
+* @param : <ObjectID>expenseId, <Function> callback
+* 
+*/
+    expensesService.getExpense($stateParams.expenseId, function (err, res) {
+      //console.log('WE IN METHOD');
+      if (err) {
+        return console.log(err);
+      }
+      $scope.expense.name = res.expense.name;
+      $scope.expense.id = res.expense._id;
+      var subjects = {};
+      res.expense.details.forEach(function(subject) {
+
+        //формируется массив уже имеющихся субъектов, для дальнейшей проверки среди
+        //всех потенциальных субъектов долга
+        subjects[subject.memberId._id] = {
+          amount: subject.amount,
+          isApproved: subject.isApproved
+        };
+      });
+      $scope.eventMembers.forEach(function(potentialMember) {
+        if (isUndef(subjects[potentialMember.id])) {
+
+        } else {
+          potentialMember.amount = subjects[potentialMember.id].amount;
+          potentialMember.isApproved = subjects[potentialMember.id].isApproved;
+        }
+      });
+    });
+
+  }
+
+  /**
+  * Adding new expense
+  *
+  * @param {object} expenseData
+  * @param {string} expenseData.name
+  * @param {array} expenseMembers {amount : float, id : ObjectID, name : string}
+  */
+
+  $scope.addExpense = function(expenseData, expenseMembers) {
+
+    if (isUndef(expenseData) || isUndef(expenseData.name)) {
+      showAlert('error', 'All fields are required', $ionicPopup);
+      return;
+    }
+
+    if (!(/^[a-zA-Z0-9 ,.!?]{8,}$/.test(expenseData.name))) {
+      showAlert('error', 'Event name should contain latin characters, letters, numbers? space or !?., symbols and length more 8 symbols', $ionicPopup);
+      return;
+    }
+
+    var checkedMembers = [];
+
+    for (member in expenseMembers) {
+      var currentMember = expenseMembers[member];
+
+      if (isUndef(currentMember.amount) || currentMember.amount <= 0) {
+        continue;
+      }
+      if (isNaN(currentMember.amount)) {
+        showAlert('error', 'Amount field should be a numeric', $ionicPopup);
+        return;
+      }
+      checkedMembers.push({
+        memberId: currentMember.id,
+        amount: currentMember.amount
+      });
+    }
+    var totalAmount = checkedMembers.reduce(function(sum, current) {
+      return sum + parseFloat(current.amount);
+    }, 0);
+
+    $ionicPopup.show({
+      template: 'Create new expense for ' + checkedMembers.length + ' members, total amount : ' + totalAmount + '?',
+      title: 'Confirm',
+      scope: $scope,
+      buttons: [{
+        text: 'No'
+      }, {
+        text: '<b>Yes</b>',
+        type: 'button-positive',
+        onTap: function() {
+          ///
+
+          expensesService.add(
+            {
+              expenseData: expenseData,
+              eventId: currentEventId,
+              checkedMembers: checkedMembers
+            }, 
+            function (err, res) {
+              if (err) {
+                showAlert('error', err, $ionicPopup);
+              } else {
+                //console.log('in new method');
+                $state.go('app.showexpense', {
+                  eventId: currentEventId,
+
+                  //res - id of new Expense, was returned from server
+                  expenseId: res
+                });
+              }
+            }
+          );
+          /*
+          execPostRequest($http, $state, 'addexpense', postArray, function(data) {
+            if (data.status == 'Expense create') {
+
+              $state.go('app.showexpense', {
+                eventId: currentEventId,
+                expenseId: data.newExpId
+              });
+            } else {
+              showAlert('error', 'We got an error here, try later', $ionicPopup);
+            }
+          });*/
+          ///
+        }
+      }]
+    });
+
+
+  };
+
+  $scope.editExpense = function(expenseData, expenseMembers) {
+    if (isUndef(expenseData) || isUndef(expenseData.name) || isUndef(expenseData.id)) {
+      showAlert('error', 'All fields are required', $ionicPopup);
+      return;
+    }
+
+    if (!(/^[a-zA-Z0-9 ,.!?]{8,}$/.test(expenseData.name))) {
+      showAlert('error', 'Event name should contain latin characters, letters, numbers? space or !?., symbols and length more 8 symbols', $ionicPopup);
+      return;
+    }
+
+    var checkedMembers = [];
+
+    for (member in expenseMembers) {
+      var currentMember = expenseMembers[member];
+
+      if (isUndef(currentMember.amount) || currentMember.amount <= 0) {
+        continue;
+      }
+      if (isNaN(currentMember.amount)) {
+        showAlert('error', 'Amount field should be a numeric', $ionicPopup);
+        return;
+      }
+      checkedMembers.push({
+        memberId: currentMember.id,
+        amount: currentMember.amount
+      });
+    }
+    var totalAmount = checkedMembers.reduce(function(sum, current) {
+      return sum + parseFloat(current.amount);
+    }, 0);
+
+    $ionicPopup.show({
+      template: 'Update new expense for ' + checkedMembers.length + ' members, total amount : ' + totalAmount + '? All approved subjects will be reseted.',
+      title: 'Confirm',
+      scope: $scope,
+      buttons: [{
+        text: 'No'
+      }, {
+        text: '<b>Yes</b>',
+        type: 'button-positive',
+        onTap: function() {
+         /*var postArray = {
+            expenseData: expenseData,
+            eventId: currentEventId,
+            checkedMembers: checkedMembers
+          };
+          //console.log(postArray);
+
+          execPostRequest($http, $state, 'editexpense', postArray, function(data) {
+            if (data.status == 'saved') {
+              $state.go('app.showexpense', {
+                eventId: currentEventId,
+                expenseId: expenseData.id
+              });
+            } else {
+              showAlert('error', 'We got an error here, try later', $ionicPopup);
+            }
+          });*/
+
+          expensesService.edit(
+            {
+              expenseData: expenseData,
+              eventId: currentEventId,
+              checkedMembers: checkedMembers
+            }, 
+            function (err, res) {
+              if (err) {
+                showAlert('error', err, $ionicPopup);
+              } else {
+               // console.log('in new method EDIRTND');
+                $state.go('app.showexpense', {
+                  eventId: currentEventId,
+                  expenseId: expenseData.id
+                });
+              }
+            }
+          );
+
+
+        }
+      }]
+    });
+
+
+  };
 });
 application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
   var validLogin = false;
@@ -1136,7 +1247,7 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
         } else {
           userData = {
             id: data.uId,
-            username: login
+            token: data.token
           };
 
           localStorage.setItem("userId", data.uId);

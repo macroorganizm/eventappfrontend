@@ -144,12 +144,23 @@ application.controller('EventsCtrl', function($scope, $http, $state, $stateParam
 
     */
   function createEvent(eventData, friendsInEvent) {
-    console.log(eventData);
+    
+    eventService.add(eventData, friendsInEvent, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);      
+      } else {
+        $state.go('app.events');
+        return;
+      }
+    })
+/*
     var postArray = {
       eventData: eventData,
       ownerId: userData.id,
       friendsInEvent: friendsInEvent
     };
+
+
 
     $http.post('http://localhost:3000/?act=addevent', postArray, {
         headers: {
@@ -168,6 +179,6 @@ application.controller('EventsCtrl', function($scope, $http, $state, $stateParam
           showAlert('error', 'We got an error here, try later', $ionicPopup);
           return;
         }
-      });
+      });*/
   }
 });

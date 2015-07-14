@@ -37,7 +37,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
             type: 'button-positive',
             onTap: function() {
               //console.log(selectedFriendId);
-              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId)
+              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId+'&token=' + userData.token)
                 .success(function(data, status, headers, config) {
                   //console.log(data);
                   getFriendsList();
@@ -56,7 +56,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
 
   $scope.addFriend = function(friendLogin) {
 
-    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin)
+    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         for (friend in contactList) {
           if (contactList[friend].id == data.friendId) {
@@ -77,7 +77,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
               text: '<b>Yes</b>',
               type: 'button-positive',
               onTap: function() {
-                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId)
+                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId+'&token=' + userData.token)
                   .success(function(data, status, headers, config) {
                     console.log(data);
                     getFriendsList();
@@ -98,7 +98,7 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
   };
 
   function getFriendsList() {
-    $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id)
+    $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         console.log(data.friendsList);
         if (isEmpty(data.friendsList)) {

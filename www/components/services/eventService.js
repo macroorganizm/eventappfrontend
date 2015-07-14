@@ -48,6 +48,57 @@ applicationServices.factory('eventService', function($http, $state, $q) {
         // console.log(events);
       });
       return deferred.promise;
+    },
+    getEventMembers: function(eventId, callback) {
+      execGetRequest($http, $state, 'geteventmembers', '&eventId=' + eventId, function(data) {
+        var eventMembers = [];
+        if (data.status == 'ok') {
+
+          for (friend in data.eventMembers) {
+            var currentMember = data.eventMembers[friend];
+            eventMembers.push({
+              id: currentMember.id,
+              name: currentMember.name
+            });
+          }
+          callback(null, eventMembers);
+          //$scope.eventMembers = data.eventMembers;
+        } else {
+          callback('getting members error');
+        }
+        //console.log($scope.eventMembers);
+      });
+    },
+    add: function(eventData, friendsInEvent, callback) {
+      var postArray = {
+        eventData: eventData,
+        ownerId: userData.id,
+        friendsInEvent: friendsInEvent
+      };
+
+      execPostRequest($http, $state, 'addevent', postArray, function(data) {
+        if (data.status == 'ok') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      }); 
+    },
+    edit: function(eventData, friendsInEvent, callback) {
+      var postArray = {
+        eventData: eventData,
+        ownerId: userData.id,
+        friendsInEvent: friendsInEvent
+      };
+
+
+      execPostRequest($http, $state, 'editevent', postArray, function(data) {
+        if (data.status == 'ok') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      }); 
     }
   };
 });

@@ -22,6 +22,8 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
       $scope.feedInfo = !$scope.feedInfo;
     }
 
+
+    // TODO : new interface in Service. Migrate
     var expensePromiseObj = expensesService.getExpenseData(expenseId);
     expensePromiseObj.then(function(expense){
     //  console.log(expense);
@@ -56,6 +58,17 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
     }
   }
   $scope.toggleApprove = function(detailId, expenseId) {
+
+    expensesService.approve(detailId, expenseId, function(err, res) {
+      if (err) {
+        showAlert('error', 'We got an error here, try later', $ionicPopup);
+      } else {
+        $state.go($state.current, {}, {
+          reload: true
+        });
+      }
+    });
+    /*
     var postArray = {
       detailId: detailId, //id êîíêðåòíîãî ñóáúåêòà, ÊÒÎ äîëæåí äåíåã
       expenseId: expenseId
@@ -71,8 +84,9 @@ application.controller('ExpensesCtrl', function($scope, $state, $http, $statePar
         showAlert('error', 'We got an error here, try later', $ionicPopup);
         return;
       }
-    });
+    });*/
   }
+
 
   $scope.showExpense = function(expenseId, eventId) {
     $state.go('app.showexpense', { /*eventId : eventId,*/

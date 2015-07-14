@@ -42,7 +42,7 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
         } else {
           userData = {
             id: data.uId,
-            username: login
+            token: data.token
           };
 
           localStorage.setItem("userId", data.uId);

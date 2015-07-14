@@ -138,7 +138,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
     views: {
       'menuContent': {
         templateUrl: 'templates/addexpense.html',
-        controller: 'AddExpenseCtrl'
+        controller: 'ManageExpenseController'
       }
     },
 	params : {eventId : null, expenseId : null}
@@ -149,7 +149,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
     views: {
       'menuContent': {
         templateUrl: 'templates/addexpense.html',
-        controller: 'AddExpenseCtrl'
+        controller: 'ManageExpenseController'
       }
     },
 	params : {eventId : null, expenseId : null}

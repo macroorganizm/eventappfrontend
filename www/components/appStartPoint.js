@@ -67,7 +67,7 @@ function execGetRequest(http, state, action, params, successCallback) {
     state.go('app.signin');
     return;
   }
-  http.get('http://localhost:3000/?act=' + action + params + '&userId=' + userData.id)
+  http.get('http://localhost:3000/?act=' + action + params + '&userId=' + userData.id + '&token=' + userData.token)
     .success(function(data) {
       successCallback(data);
     })
@@ -87,7 +87,7 @@ function execPostRequest(http, state, action, postData, successCallback) {
   var postArray = postData;
   postArray.ownerId = userData.id;
 
-  http.post('http://localhost:3000/?act=' + action, postArray, {
+  http.post('http://localhost:3000/?act=' + action + '&token=' + userData.token, postArray, {
       headers: {
         'Content-Type': 'application/json'
       }

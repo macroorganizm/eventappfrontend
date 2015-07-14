@@ -1,3 +1,24 @@
+applicationServices.factory('commentsService', function($http, $state, $q) {
+  return {
+    addComment: function(comment, expenseId, callback) {
+
+      var isImportant = (isUndef(comment.isImportant)) ? false : comment.isImportant;
+      var postArray = {
+        commentText: comment.text,
+        expenseId: expenseId,
+        isImportant: isImportant
+      };
+
+      execPostRequest($http, $state, 'addexpensecomment', postArray, function(data) {
+        if (data.status == 'saved') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      });     
+    }
+  };
+});
 applicationServices.factory('eventService', function($http, $state, $q) {
   return {
     all: function(isArchived) {
@@ -48,6 +69,57 @@ applicationServices.factory('eventService', function($http, $state, $q) {
         // console.log(events);
       });
       return deferred.promise;
+    },
+    getEventMembers: function(eventId, callback) {
+      execGetRequest($http, $state, 'geteventmembers', '&eventId=' + eventId, function(data) {
+        var eventMembers = [];
+        if (data.status == 'ok') {
+
+          for (friend in data.eventMembers) {
+            var currentMember = data.eventMembers[friend];
+            eventMembers.push({
+              id: currentMember.id,
+              name: currentMember.name
+            });
+          }
+          callback(null, eventMembers);
+          //$scope.eventMembers = data.eventMembers;
+        } else {
+          callback('getting members error');
+        }
+        //console.log($scope.eventMembers);
+      });
+    },
+    add: function(eventData, friendsInEvent, callback) {
+      var postArray = {
+        eventData: eventData,
+        ownerId: userData.id,
+        friendsInEvent: friendsInEvent
+      };
+
+      execPostRequest($http, $state, 'addevent', postArray, function(data) {
+        if (data.status == 'ok') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      }); 
+    },
+    edit: function(eventData, friendsInEvent, callback) {
+      var postArray = {
+        eventData: eventData,
+        ownerId: userData.id,
+        friendsInEvent: friendsInEvent
+      };
+
+
+      execPostRequest($http, $state, 'editevent', postArray, function(data) {
+        if (data.status == 'ok') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      }); 
     }
   };
 });
@@ -103,6 +175,59 @@ applicationServices.factory('expensesService', function($http, $state, $q) {
       });
       
       return deferred.promise;
+    },
+    getExpense: function(expenseId, callback) {
+      var expense = {};
+      var members = {};
+      var params = '&expenseId=' + expenseId;
+
+      execGetRequest($http, $state, 'getexpense', params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          callback(null, data);
+        } else {
+          callback('Recieving Expense data error');
+        }
+      });
+
+    },
+    add: function(params, callback) {
+      execPostRequest($http, $state, 'addexpense', params, function(data) {
+        if (data.status == 'Expense create') {
+          callback(null, data.newExpId);
+        } else {
+          callback('We got an error here, try later');
+        }
+      });
+
+    },
+    edit: function(params, callback) {
+      execPostRequest($http, $state, 'editexpense', params, function(data) {
+        console.log(data);
+        if (data.status == 'saved') {
+          callback();
+        } else {
+          callback('We got an error here, try later');
+        }
+      });
+
+    },
+    approve: function(detailId, expenseId, cb) {
+
+      var postArray = {
+        detailId: detailId, //id êîíêðåòíîãî ñóáúåêòà, ÊÒÎ äîëæåí äåíåã
+        expenseId: expenseId
+      };
+
+      execPostRequest($http, $state, 'approve', postArray, function(data) {
+        if (data.status == 'approved') {
+          cb();
+          return;
+        } else {
+          cb('We got an error here, try later');
+        }
+      });
+
     },
     getExpenseData: function(expenseId) {
       

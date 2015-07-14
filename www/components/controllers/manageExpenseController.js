@@ -1,34 +1,35 @@
-application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateParams, $ionicPopup) {
+application.controller('ManageExpenseController', function($scope, $state, $http, $stateParams, $ionicPopup, eventService, expensesService) {
   var currentEventId = $stateParams.eventId;
   //console.log($stateParams);
   $scope.eventMembers = [];
   $scope.expense = {
     action: 'create'
   };
-  execGetRequest($http, $state, 'geteventmembers', '&eventId=' + currentEventId, function(data) {
-    if (data.status == 'ok') {
+  //console.log("Manage");
 
-      for (friend in data.eventMembers) {
-        var currentMember = data.eventMembers[friend];
-        $scope.eventMembers.push({
-          id: currentMember.id,
-          name: currentMember.name
-        });
-      }
-
-      //$scope.eventMembers = data.eventMembers;
+  eventService.getEventMembers(currentEventId, function(err, res) {
+    if (err) {
+      console.log(err);
+    } else {
+      //console.log('WE GOT ALL');
+      $scope.eventMembers = res;
     }
-    //console.log($scope.eventMembers);
+    
   });
+
+  
 
   if (!$stateParams.expenseId) {
     //adding
 
   } else {
-    var params = '&expenseId=' + $stateParams.expenseId + '&eventId=' + currentEventId;
+    /*var params = '&expenseId=' + $stateParams.expenseId + '&eventId=' + currentEventId;
 
     execGetRequest($http, $state, 'getexpense', params, function(data) {
-      //console.log(userData.id);
+      //console.log('native getting');
+      //console.log(data);
+
+
       if (data.status == 'ok') {
         $scope.expense.name = data.expense.name;
         $scope.expense.id = data.expense._id;
@@ -41,7 +42,7 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
             isApproved: subject.isApproved
           };
         });
-        console.log(subjects);
+        //console.log(subjects);
         $scope.eventMembers.forEach(function(potentialMember) {
           if (isUndef(subjects[potentialMember.id])) {
 
@@ -53,12 +54,56 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
 
       } else {
         console.log(data);
+
       }
+    });
+*/
+
+/**
+* receiving data of one expense for filing editing form
+*
+* @param : <ObjectID>expenseId, <Function> callback
+* 
+*/
+    expensesService.getExpense($stateParams.expenseId, function (err, res) {
+      //console.log('WE IN METHOD');
+      if (err) {
+        return console.log(err);
+      }
+      $scope.expense.name = res.expense.name;
+      $scope.expense.id = res.expense._id;
+      var subjects = {};
+      res.expense.details.forEach(function(subject) {
+
+        //формируется массив уже имеющихся субъектов, для дальнейшей проверки среди
+        //всех потенциальных субъектов долга
+        subjects[subject.memberId._id] = {
+          amount: subject.amount,
+          isApproved: subject.isApproved
+        };
+      });
+      $scope.eventMembers.forEach(function(potentialMember) {
+        if (isUndef(subjects[potentialMember.id])) {
+
+        } else {
+          potentialMember.amount = subjects[potentialMember.id].amount;
+          potentialMember.isApproved = subjects[potentialMember.id].isApproved;
+        }
+      });
     });
 
   }
 
+  /**
+  * Adding new expense
+  *
+  * @param {object} expenseData
+  * @param {string} expenseData.name
+  * @param {array} expenseMembers {amount : float, id : ObjectID, name : string}
+  */
+
   $scope.addExpense = function(expenseData, expenseMembers) {
+
     if (isUndef(expenseData) || isUndef(expenseData.name)) {
       showAlert('error', 'All fields are required', $ionicPopup);
       return;
@@ -100,11 +145,29 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
         text: '<b>Yes</b>',
         type: 'button-positive',
         onTap: function() {
-          var postArray = {
-            expenseData: expenseData,
-            eventId: currentEventId,
-            checkedMembers: checkedMembers
-          };
+          ///
+
+          expensesService.add(
+            {
+              expenseData: expenseData,
+              eventId: currentEventId,
+              checkedMembers: checkedMembers
+            }, 
+            function (err, res) {
+              if (err) {
+                showAlert('error', err, $ionicPopup);
+              } else {
+                //console.log('in new method');
+                $state.go('app.showexpense', {
+                  eventId: currentEventId,
+
+                  //res - id of new Expense, was returned from server
+                  expenseId: res
+                });
+              }
+            }
+          );
+          /*
           execPostRequest($http, $state, 'addexpense', postArray, function(data) {
             if (data.status == 'Expense create') {
 
@@ -115,7 +178,8 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
             } else {
               showAlert('error', 'We got an error here, try later', $ionicPopup);
             }
-          });
+          });*/
+          ///
         }
       }]
     });
@@ -165,7 +229,7 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
         text: '<b>Yes</b>',
         type: 'button-positive',
         onTap: function() {
-          var postArray = {
+         /*var postArray = {
             expenseData: expenseData,
             eventId: currentEventId,
             checkedMembers: checkedMembers
@@ -181,7 +245,28 @@ application.controller('AddExpenseCtrl', function($scope, $state, $http, $stateP
             } else {
               showAlert('error', 'We got an error here, try later', $ionicPopup);
             }
-          });
+          });*/
+
+          expensesService.edit(
+            {
+              expenseData: expenseData,
+              eventId: currentEventId,
+              checkedMembers: checkedMembers
+            }, 
+            function (err, res) {
+              if (err) {
+                showAlert('error', err, $ionicPopup);
+              } else {
+               // console.log('in new method EDIRTND');
+                $state.go('app.showexpense', {
+                  eventId: currentEventId,
+                  expenseId: expenseData.id
+                });
+              }
+            }
+          );
+
+
         }
       }]
     });

@@ -125,15 +125,25 @@ application.controller('EventEditCtrl', function($scope, $state, $http, $statePa
   }
 
   function updateEvent(event, selectedFriends) {
-
+    console.log('newupdate');
+    eventService.edit(event, selectedFriends, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);      
+      } else {
+        $state.go('app.events');
+        return;
+      }
+    })
+  
+/*
     var postArray = {
       eventData: event,
       ownerId: userData.id,
       friendsInEvent: selectedFriends
     };
-    /*
+    
     console.log(postArray);
-    return;*/
+    return;
 
     $http.post('http://localhost:3000/?act=editevent', postArray, {
         headers: {
@@ -151,7 +161,7 @@ application.controller('EventEditCtrl', function($scope, $state, $http, $statePa
           showAlert('error', 'We got an error here, try later', $ionicPopup);
           return;
         }
-      });
+      });*/
 
   }
 });
