@@ -1,4 +1,4 @@
-application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state, $interval, $ionicHistory) {
+application.controller('SignInCtrl', function($scope, $http, AuthService, $ionicPopup, $state, $interval, $ionicHistory) {
   $ionicHistory.nextViewOptions({
     disableBack: true
   });
@@ -32,6 +32,28 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
   $scope.login = 'qwert';
   $scope.pass = '11111111';
   $scope.signIn = function(login, pass) {
+
+    AuthService.signIn(login, pass, function(err, res) {
+
+      console.log('newsig');
+
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        
+      } else {
+        userData = {
+            id: res.uId,
+            token: res.token
+          };
+
+          localStorage.setItem("userId", res.uId);
+          console.log('feed one Time on login');
+          getFeed($http, $state);
+          
+          $state.go('app.events');
+      }
+    });
+/*
     $http.get('http://localhost:3000/?act=signin&login=' + login + '&password=' + pass)
       .success(function(data, status, headers, config) {
         if (data.status === 'error') {
@@ -56,7 +78,7 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
       })
       .error(function(data, status, headers, config) {
         console.log(data);
-      });
+      });*/
   };
 
 });

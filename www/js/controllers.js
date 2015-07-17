@@ -60,7 +60,19 @@ function getFeed(http, state) {
   });
 }
 
-
+function execUnAuthRequest(http, state, action, params, successCallback) {
+/*  if (userData == null || isUndef(userData.id)) {
+    state.go('app.signin');
+    return;
+  }*/
+  http.get('http://localhost:3000/?act=' + action + params)
+    .success(function(data) {
+      successCallback(data);
+    })
+    .error(function(data, status, headers, config) {
+      console.log(data);
+    });
+}
 
 function execGetRequest(http, state, action, params, successCallback) {
   if (userData == null || isUndef(userData.id)) {
@@ -160,7 +172,7 @@ application.controller('AppCtrl', function($scope, $http, $state) {
   // Form data for the login modal
  
 });
-application.controller('EventBalanceCtrl', function($scope, $http, $state, $stateParams, $ionicPopup) {
+application.controller('EventBalanceCtrl', function($scope, $http, $state, $stateParams, $ionicPopup, expensesService) {
 
   if (userData == null || isUndef(userData.id)) {
     //$location.path("/tab/signin");
@@ -169,8 +181,12 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
   }
   var params = '&eventId=' + $stateParams.eventId;
 
-  execGetRequest($http, $state, 'getexpensesforbalanse', params, function(data) {
-    if (data.status == 'ok') {
+  expensesService.getExpensesList($stateParams.eventId, 'getexpensesforbalanse', function(err, res) {
+    if (err) {
+      showAlert('error', err, $ionicPopup);
+      return;
+    }
+    console.log('newBall');
       var expensesOwner = []; //Ìàññèâ ãäå äîëæíû ÞÇÅÐÓ
       var totalOwn = {
         expenseName: 'Total',
@@ -185,7 +201,7 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
         unapproved: 0
       };
       var expensesSubject = []; //Ìàññèâ, ãäå þçåð ÿâëÿåòñÿ äîëæíèêîì
-      data.expenses.forEach(function(expense) {
+      res.expenses.forEach(function(expense) {
         var expenseString = ''
         if (expense.ownerId._id != userData.id) {
           // you owe
@@ -239,9 +255,11 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
       $scope.expensesSubject = expensesSubject;
       expensesOwner.push(totalPaid);
       $scope.expensesOwner = expensesOwner;
-    }
-    console.log(data);
+    
+  
   });
+
+  
 });
 
 application.controller('EventEditCtrl', function($scope, $state, $http, $stateParams, $ionicPopup, eventService, friendsService, $ionicHistory) {
@@ -595,18 +613,60 @@ application.controller('EventsCtrl', function($scope, $http, $state, $stateParam
       });*/
   }
 });
-application.controller('ExpensesCtrl', function($scope, $state, $http, $stateParams, $ionicPopup, expensesService, feedsService, $ionicHistory) {
+application.controller('ExpensesCtrl', function($scope, $state, $stateParams, $ionicPopup, expensesService, feedsService, $ionicHistory) {
   //$ionicHistory.clearHistory();
   $scope.currentEventId = $stateParams.eventId;
   $scope.expensesList = [];
   
 
   if ($state.is('app.expenses')) {
-    var expensesPromiseObj = expensesService.getExpensesList($stateParams.eventId);
-    expensesPromiseObj.then(function(expensesList){
+    console.log('exp new');
+    //var expensesPromiseObj = expensesService.getExpensesList($stateParams.eventId);
+   // expensesPromiseObj.then(function(expensesList){
 
-      $scope.expensesList = expensesList;
-    });
+      //$scope.expensesList = expensesList;`
+     expensesService.getExpensesList($stateParams.eventId, null, function(err, res){
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+        return;
+      }
+      for (expense in res.expenses) {
+        var currentExpense = res.expenses[expense];
+        var details = '';
+        var isExpenseOwner = (currentExpense.ownerId == userData.id);
+        if (isExpenseOwner) {
+          details += 'Вам должны : ';
+          var approved = 0;
+          unaproved = 0;
+          currentExpense.details.forEach(function(item) {
+            //console.log(item.amount, item.isApproved);
+            if (item.isApproved) {
+              approved += parseFloat(item.amount);
+            } else {
+              unaproved += parseFloat(item.amount);
+            }
+          });
+          details += 'approved : ' + approved + ', unapproved : ' + unaproved;
+        } else {
+          details += 'Вы должны : ';
+          currentExpense.details.forEach(function(item) {
+            if (item.memberId == userData.id) {
+              details += parseFloat(item.amount);
+              details += (item.isApproved) ? ' (approved)' : ' (unapproved)'
+            }
+          });
+        }
+
+
+        $scope.expensesList.push({
+          id: currentExpense._id,
+          isOwner: isExpenseOwner,
+          name: currentExpense.name,
+          details: details,
+          comments: currentExpense.comments.length
+        });
+      }
+     }); 
   } else if ($state.is('app.showexpense')) {
     /* var eventId = $stateParams.eventId;*/
     var expenseId = $stateParams.expenseId;
@@ -745,7 +805,7 @@ application.controller('FeedCtrl', function($scope, $http, $state, feedsService)
     }
   };
 });
-application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $state, $ionicActionSheet) {
+application.controller('FriendsCtrl', function($scope, friendsService, $ionicPopup, $state, $ionicActionSheet) {
   var contactList = {};
   if (userData == null || isUndef(userData.id)) {
     //$location.path("/tab/signin");
@@ -783,15 +843,15 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
             text: '<b>Yes</b>',
             type: 'button-positive',
             onTap: function() {
-              //console.log(selectedFriendId);
-              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId+'&token=' + userData.token)
-                .success(function(data, status, headers, config) {
-                  //console.log(data);
+              friendsService.remove(friendId, function(err, res) {
+                if (err) {
+                  showAlert('error', err, $ionicPopup);
+                } else {
                   getFriendsList();
-                })
-                .error(function(data, status, headers, config) {
-                  console.log(data);
-                });
+                }
+              });
+              //console.log(selectedFriendId);
+              
             }
           }]
         });
@@ -802,16 +862,17 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
 
 
   $scope.addFriend = function(friendLogin) {
-
-    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
-      .success(function(data, status, headers, config) {
+    friendsService.add({name : friendLogin}, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
         for (friend in contactList) {
-          if (contactList[friend].id == data.friendId) {
+          if (contactList[friend].id == res.friendId) {
             showAlert('Bad Idea', contactList[friend].name + ' is already in friend list!', $ionicPopup);
             return;
           }
         }
-        if (data.status == 'error') {
+        if (res.status == 'error') {
           showAlert('error', data.msg, $ionicPopup);
         } else {
           $ionicPopup.show({
@@ -824,27 +885,35 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
               text: '<b>Yes</b>',
               type: 'button-positive',
               onTap: function() {
-                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId+'&token=' + userData.token)
-                  .success(function(data, status, headers, config) {
-                    console.log(data);
+
+                friendsService.add({id : res.friendId}, function(err, res) {
+                  if (err) {
+                    showAlert('error', err, $ionicPopup);
+                  } else {
+                    console.log('added');
                     getFriendsList();
-                  })
-                  .error(function(data, status, headers, config) {
-                    console.log(data);
-                  });
+                  }
+                });
               }
             }]
           });
         }
+      }
+    });
+/*
+    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
+      .success(function(data, status, headers, config) {
+        
 
       })
       .error(function(data, status, headers, config) {
 
         // console.log(data);
-      });
+      });*/
   };
 
   function getFriendsList() {
+    /*
     $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         console.log(data.friendsList);
@@ -859,7 +928,13 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
       })
       .error(function(data, status, headers, config) {
         console.log(data);
-      });
+      });*/
+    var friendsPromiseObj = friendsService.getMyFriends();
+    friendsPromiseObj.then(function(friends){
+
+      console.log('newfriends');
+      $scope.friends = friends.friends;
+    });
   }
 
   getFriendsList();
@@ -1013,8 +1088,9 @@ application.controller('ManageExpenseController', function($scope, $state, $http
         text: '<b>Yes</b>',
         type: 'button-positive',
         onTap: function() {
+          doAdd(expenseData, currentEventId, checkedMembers);
           ///
-
+/*
           expensesService.add(
             {
               expenseData: expenseData,
@@ -1034,7 +1110,7 @@ application.controller('ManageExpenseController', function($scope, $state, $http
                 });
               }
             }
-          );
+          );*/
           /*
           execPostRequest($http, $state, 'addexpense', postArray, function(data) {
             if (data.status == 'Expense create') {
@@ -1114,25 +1190,8 @@ application.controller('ManageExpenseController', function($scope, $state, $http
               showAlert('error', 'We got an error here, try later', $ionicPopup);
             }
           });*/
-
-          expensesService.edit(
-            {
-              expenseData: expenseData,
-              eventId: currentEventId,
-              checkedMembers: checkedMembers
-            }, 
-            function (err, res) {
-              if (err) {
-                showAlert('error', err, $ionicPopup);
-              } else {
-               // console.log('in new method EDIRTND');
-                $state.go('app.showexpense', {
-                  eventId: currentEventId,
-                  expenseId: expenseData.id
-                });
-              }
-            }
-          );
+          doEdit(expenseData, currentEventId, checkedMembers);
+          
 
 
         }
@@ -1141,13 +1200,64 @@ application.controller('ManageExpenseController', function($scope, $state, $http
 
 
   };
+
+  function doEdit(expenseData, currentEventId, checkedMembers) {
+    //console.log('doEdit');
+    expensesService.edit({
+      expenseData: expenseData,
+      eventId: currentEventId,
+      checkedMembers: checkedMembers
+    }, function (err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
+       // console.log('in new method EDIRTND');
+        $state.go('app.showexpense', {
+          eventId: currentEventId,
+          expenseId: expenseData.id
+        });
+      }
+    });
+  }
+
+  function doAdd(expenseData, currentEventId, checkedMembers) {
+    //console.log('doaff');
+    expensesService.add({
+      expenseData: expenseData,
+      eventId: currentEventId,
+      checkedMembers: checkedMembers
+    }, function (err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
+        //console.log('in new method');
+        $state.go('app.showexpense', {
+          eventId: currentEventId,
+
+          //res - id of new Expense, was returned from server
+          expenseId: res
+        });
+      }
+    });
+  }
 });
-application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
+application.controller('RegCtrl', function($scope, $http, $ionicPopup, AuthService) {
   var validLogin = false;
   $scope.checkLogin = function(userLogin) {
     if (isUndef(userLogin) || userLogin === '') {
       return;
     }
+
+    AuthService.checkLogin(userLogin, function(err, res) {
+      console.log('omnono');
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        validLogin = false;
+      } else {
+        validLogin = true;
+      }
+    });
+    /*
     $http.get('http://localhost:3000/?act=checkLogin&login=' + userLogin)
       .success(function(data, status, headers, config) {
         if (data.status == 'error') {
@@ -1161,7 +1271,7 @@ application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
         //$scope.showAlert(status, data);
         console.log(data);
       });
-
+*/
   };
 
   $scope.register = function(regData, form) {
@@ -1185,25 +1295,21 @@ application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
       showAlert('error', 'Current login is already busy', $ionicPopup);
       return;
     }
-    //$http.get('http://localhost:3000/?act=regme&login=@$$4@&password='+regData.password)
-    $http.get('http://localhost:3000/?act=regme&login=' + regData.login + '&password=' + regData.password)
-      .success(function(data, status, headers, config) {
-        if (data.status == 'Registration complete') {
-          showAlert('Confirm', 'Registration done!', $ionicPopup);
-          return;
-        } else {
-          showAlert('error', 'We got an error here, try later', $ionicPopup);
-          return;
-        }
-      })
-      .error(function(data, status, headers, config) {
-        //$scope.showAlert(status, data);
-        console.log(data);
-      });
+
+    AuthService.register(regData.login, regData.password, function(err, res) {
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        
+      } else {
+        showAlert('Confirm', res, $ionicPopup);
+      }
+    });
+
+    
     //console.log((/^[a-zA-Z0-9]+$/.test(regData.login)));
   };
 });
-application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state, $interval, $ionicHistory) {
+application.controller('SignInCtrl', function($scope, $http, AuthService, $ionicPopup, $state, $interval, $ionicHistory) {
   $ionicHistory.nextViewOptions({
     disableBack: true
   });
@@ -1237,6 +1343,28 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
   $scope.login = 'qwert';
   $scope.pass = '11111111';
   $scope.signIn = function(login, pass) {
+
+    AuthService.signIn(login, pass, function(err, res) {
+
+      console.log('newsig');
+
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        
+      } else {
+        userData = {
+            id: res.uId,
+            token: res.token
+          };
+
+          localStorage.setItem("userId", res.uId);
+          console.log('feed one Time on login');
+          getFeed($http, $state);
+          
+          $state.go('app.events');
+      }
+    });
+/*
     $http.get('http://localhost:3000/?act=signin&login=' + login + '&password=' + pass)
       .success(function(data, status, headers, config) {
         if (data.status === 'error') {
@@ -1261,7 +1389,7 @@ application.controller('SignInCtrl', function($scope, $http, $ionicPopup, $state
       })
       .error(function(data, status, headers, config) {
         console.log(data);
-      });
+      });*/
   };
 
 });

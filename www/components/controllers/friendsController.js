@@ -1,4 +1,4 @@
-application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $state, $ionicActionSheet) {
+application.controller('FriendsCtrl', function($scope, friendsService, $ionicPopup, $state, $ionicActionSheet) {
   var contactList = {};
   if (userData == null || isUndef(userData.id)) {
     //$location.path("/tab/signin");
@@ -36,15 +36,15 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
             text: '<b>Yes</b>',
             type: 'button-positive',
             onTap: function() {
-              //console.log(selectedFriendId);
-              $http.get('http://localhost:3000/?act=delfriend&userId=' + userData.id + '&friendId=' + selectedFriendId+'&token=' + userData.token)
-                .success(function(data, status, headers, config) {
-                  //console.log(data);
+              friendsService.remove(friendId, function(err, res) {
+                if (err) {
+                  showAlert('error', err, $ionicPopup);
+                } else {
                   getFriendsList();
-                })
-                .error(function(data, status, headers, config) {
-                  console.log(data);
-                });
+                }
+              });
+              //console.log(selectedFriendId);
+              
             }
           }]
         });
@@ -55,16 +55,17 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
 
 
   $scope.addFriend = function(friendLogin) {
-
-    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
-      .success(function(data, status, headers, config) {
+    friendsService.add({name : friendLogin}, function(err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
         for (friend in contactList) {
-          if (contactList[friend].id == data.friendId) {
+          if (contactList[friend].id == res.friendId) {
             showAlert('Bad Idea', contactList[friend].name + ' is already in friend list!', $ionicPopup);
             return;
           }
         }
-        if (data.status == 'error') {
+        if (res.status == 'error') {
           showAlert('error', data.msg, $ionicPopup);
         } else {
           $ionicPopup.show({
@@ -77,27 +78,35 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
               text: '<b>Yes</b>',
               type: 'button-positive',
               onTap: function() {
-                $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendId=' + data.friendId+'&token=' + userData.token)
-                  .success(function(data, status, headers, config) {
-                    console.log(data);
+
+                friendsService.add({id : res.friendId}, function(err, res) {
+                  if (err) {
+                    showAlert('error', err, $ionicPopup);
+                  } else {
+                    console.log('added');
                     getFriendsList();
-                  })
-                  .error(function(data, status, headers, config) {
-                    console.log(data);
-                  });
+                  }
+                });
               }
             }]
           });
         }
+      }
+    });
+/*
+    $http.get('http://localhost:3000/?act=addfriend&userId=' + userData.id + '&friendlogin=' + friendLogin+'&token=' + userData.token)
+      .success(function(data, status, headers, config) {
+        
 
       })
       .error(function(data, status, headers, config) {
 
         // console.log(data);
-      });
+      });*/
   };
 
   function getFriendsList() {
+    /*
     $http.get('http://localhost:3000/?act=getmyfriends&userId=' + userData.id+'&token=' + userData.token)
       .success(function(data, status, headers, config) {
         console.log(data.friendsList);
@@ -112,7 +121,13 @@ application.controller('FriendsCtrl', function($scope, $http, $ionicPopup, $stat
       })
       .error(function(data, status, headers, config) {
         console.log(data);
-      });
+      });*/
+    var friendsPromiseObj = friendsService.getMyFriends();
+    friendsPromiseObj.then(function(friends){
+
+      console.log('newfriends');
+      $scope.friends = friends.friends;
+    });
   }
 
   getFriendsList();

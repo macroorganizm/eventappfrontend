@@ -60,7 +60,19 @@ function getFeed(http, state) {
   });
 }
 
-
+function execUnAuthRequest(http, state, action, params, successCallback) {
+/*  if (userData == null || isUndef(userData.id)) {
+    state.go('app.signin');
+    return;
+  }*/
+  http.get('http://localhost:3000/?act=' + action + params)
+    .success(function(data) {
+      successCallback(data);
+    })
+    .error(function(data, status, headers, config) {
+      console.log(data);
+    });
+}
 
 function execGetRequest(http, state, action, params, successCallback) {
   if (userData == null || isUndef(userData.id)) {

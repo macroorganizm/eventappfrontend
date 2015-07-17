@@ -1,15 +1,57 @@
-application.controller('ExpensesCtrl', function($scope, $state, $http, $stateParams, $ionicPopup, expensesService, feedsService, $ionicHistory) {
+application.controller('ExpensesCtrl', function($scope, $state, $stateParams, $ionicPopup, expensesService, feedsService, $ionicHistory) {
   //$ionicHistory.clearHistory();
   $scope.currentEventId = $stateParams.eventId;
   $scope.expensesList = [];
   
 
   if ($state.is('app.expenses')) {
-    var expensesPromiseObj = expensesService.getExpensesList($stateParams.eventId);
-    expensesPromiseObj.then(function(expensesList){
+    console.log('exp new');
+    //var expensesPromiseObj = expensesService.getExpensesList($stateParams.eventId);
+   // expensesPromiseObj.then(function(expensesList){
 
-      $scope.expensesList = expensesList;
-    });
+      //$scope.expensesList = expensesList;`
+     expensesService.getExpensesList($stateParams.eventId, null, function(err, res){
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+        return;
+      }
+      for (expense in res.expenses) {
+        var currentExpense = res.expenses[expense];
+        var details = '';
+        var isExpenseOwner = (currentExpense.ownerId == userData.id);
+        if (isExpenseOwner) {
+          details += 'Вам должны : ';
+          var approved = 0;
+          unaproved = 0;
+          currentExpense.details.forEach(function(item) {
+            //console.log(item.amount, item.isApproved);
+            if (item.isApproved) {
+              approved += parseFloat(item.amount);
+            } else {
+              unaproved += parseFloat(item.amount);
+            }
+          });
+          details += 'approved : ' + approved + ', unapproved : ' + unaproved;
+        } else {
+          details += 'Вы должны : ';
+          currentExpense.details.forEach(function(item) {
+            if (item.memberId == userData.id) {
+              details += parseFloat(item.amount);
+              details += (item.isApproved) ? ' (approved)' : ' (unapproved)'
+            }
+          });
+        }
+
+
+        $scope.expensesList.push({
+          id: currentExpense._id,
+          isOwner: isExpenseOwner,
+          name: currentExpense.name,
+          details: details,
+          comments: currentExpense.comments.length
+        });
+      }
+     }); 
   } else if ($state.is('app.showexpense')) {
     /* var eventId = $stateParams.eventId;*/
     var expenseId = $stateParams.expenseId;

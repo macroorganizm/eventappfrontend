@@ -1,7 +1,24 @@
 applicationServices.factory('expensesService', function($http, $state, $q) {
   return {
-    getExpensesList: function(eventId) {
-      var expensesList = [];
+    getExpensesList: function(eventId, apipath, cb) {
+      
+      var params = '&eventId=' + eventId;
+      var apipath = apipath || 'getexpenses';
+
+      console.log('apipath : ' + apipath);
+
+      execGetRequest($http, $state, apipath, params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          cb(null, data);
+        } else {
+          cb('Recieving Expense data error');
+        }
+      });
+
+    },
+
+/*
       var deferred = $q.defer();
 
       var params = '&eventId=' + eventId;
@@ -50,7 +67,7 @@ applicationServices.factory('expensesService', function($http, $state, $q) {
       });
       
       return deferred.promise;
-    },
+    },*/
     getExpense: function(expenseId, callback) {
       var expense = {};
       var members = {};

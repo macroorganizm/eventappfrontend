@@ -1,9 +1,20 @@
-application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
+application.controller('RegCtrl', function($scope, $http, $ionicPopup, AuthService) {
   var validLogin = false;
   $scope.checkLogin = function(userLogin) {
     if (isUndef(userLogin) || userLogin === '') {
       return;
     }
+
+    AuthService.checkLogin(userLogin, function(err, res) {
+      console.log('omnono');
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        validLogin = false;
+      } else {
+        validLogin = true;
+      }
+    });
+    /*
     $http.get('http://localhost:3000/?act=checkLogin&login=' + userLogin)
       .success(function(data, status, headers, config) {
         if (data.status == 'error') {
@@ -17,7 +28,7 @@ application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
         //$scope.showAlert(status, data);
         console.log(data);
       });
-
+*/
   };
 
   $scope.register = function(regData, form) {
@@ -41,21 +52,17 @@ application.controller('RegCtrl', function($scope, $http, $ionicPopup) {
       showAlert('error', 'Current login is already busy', $ionicPopup);
       return;
     }
-    //$http.get('http://localhost:3000/?act=regme&login=@$$4@&password='+regData.password)
-    $http.get('http://localhost:3000/?act=regme&login=' + regData.login + '&password=' + regData.password)
-      .success(function(data, status, headers, config) {
-        if (data.status == 'Registration complete') {
-          showAlert('Confirm', 'Registration done!', $ionicPopup);
-          return;
-        } else {
-          showAlert('error', 'We got an error here, try later', $ionicPopup);
-          return;
-        }
-      })
-      .error(function(data, status, headers, config) {
-        //$scope.showAlert(status, data);
-        console.log(data);
-      });
+
+    AuthService.register(regData.login, regData.password, function(err, res) {
+      if(err) {
+        showAlert('error', err, $ionicPopup);
+        
+      } else {
+        showAlert('Confirm', res, $ionicPopup);
+      }
+    });
+
+    
     //console.log((/^[a-zA-Z0-9]+$/.test(regData.login)));
   };
 });

@@ -1,4 +1,4 @@
-application.controller('EventBalanceCtrl', function($scope, $http, $state, $stateParams, $ionicPopup) {
+application.controller('EventBalanceCtrl', function($scope, $http, $state, $stateParams, $ionicPopup, expensesService) {
 
   if (userData == null || isUndef(userData.id)) {
     //$location.path("/tab/signin");
@@ -7,8 +7,12 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
   }
   var params = '&eventId=' + $stateParams.eventId;
 
-  execGetRequest($http, $state, 'getexpensesforbalanse', params, function(data) {
-    if (data.status == 'ok') {
+  expensesService.getExpensesList($stateParams.eventId, 'getexpensesforbalanse', function(err, res) {
+    if (err) {
+      showAlert('error', err, $ionicPopup);
+      return;
+    }
+    console.log('newBall');
       var expensesOwner = []; //Ìàññèâ ãäå äîëæíû ÞÇÅÐÓ
       var totalOwn = {
         expenseName: 'Total',
@@ -23,7 +27,7 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
         unapproved: 0
       };
       var expensesSubject = []; //Ìàññèâ, ãäå þçåð ÿâëÿåòñÿ äîëæíèêîì
-      data.expenses.forEach(function(expense) {
+      res.expenses.forEach(function(expense) {
         var expenseString = ''
         if (expense.ownerId._id != userData.id) {
           // you owe
@@ -77,7 +81,9 @@ application.controller('EventBalanceCtrl', function($scope, $http, $state, $stat
       $scope.expensesSubject = expensesSubject;
       expensesOwner.push(totalPaid);
       $scope.expensesOwner = expensesOwner;
-    }
-    console.log(data);
+    
+  
   });
+
+  
 });

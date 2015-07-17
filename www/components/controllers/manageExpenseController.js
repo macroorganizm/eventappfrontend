@@ -145,8 +145,9 @@ application.controller('ManageExpenseController', function($scope, $state, $http
         text: '<b>Yes</b>',
         type: 'button-positive',
         onTap: function() {
+          doAdd(expenseData, currentEventId, checkedMembers);
           ///
-
+/*
           expensesService.add(
             {
               expenseData: expenseData,
@@ -166,7 +167,7 @@ application.controller('ManageExpenseController', function($scope, $state, $http
                 });
               }
             }
-          );
+          );*/
           /*
           execPostRequest($http, $state, 'addexpense', postArray, function(data) {
             if (data.status == 'Expense create') {
@@ -246,25 +247,8 @@ application.controller('ManageExpenseController', function($scope, $state, $http
               showAlert('error', 'We got an error here, try later', $ionicPopup);
             }
           });*/
-
-          expensesService.edit(
-            {
-              expenseData: expenseData,
-              eventId: currentEventId,
-              checkedMembers: checkedMembers
-            }, 
-            function (err, res) {
-              if (err) {
-                showAlert('error', err, $ionicPopup);
-              } else {
-               // console.log('in new method EDIRTND');
-                $state.go('app.showexpense', {
-                  eventId: currentEventId,
-                  expenseId: expenseData.id
-                });
-              }
-            }
-          );
+          doEdit(expenseData, currentEventId, checkedMembers);
+          
 
 
         }
@@ -273,4 +257,44 @@ application.controller('ManageExpenseController', function($scope, $state, $http
 
 
   };
+
+  function doEdit(expenseData, currentEventId, checkedMembers) {
+    //console.log('doEdit');
+    expensesService.edit({
+      expenseData: expenseData,
+      eventId: currentEventId,
+      checkedMembers: checkedMembers
+    }, function (err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
+       // console.log('in new method EDIRTND');
+        $state.go('app.showexpense', {
+          eventId: currentEventId,
+          expenseId: expenseData.id
+        });
+      }
+    });
+  }
+
+  function doAdd(expenseData, currentEventId, checkedMembers) {
+    //console.log('doaff');
+    expensesService.add({
+      expenseData: expenseData,
+      eventId: currentEventId,
+      checkedMembers: checkedMembers
+    }, function (err, res) {
+      if (err) {
+        showAlert('error', err, $ionicPopup);
+      } else {
+        //console.log('in new method');
+        $state.go('app.showexpense', {
+          eventId: currentEventId,
+
+          //res - id of new Expense, was returned from server
+          expenseId: res
+        });
+      }
+    });
+  }
 });

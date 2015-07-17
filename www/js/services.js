@@ -1,23 +1,88 @@
-applicationServices.factory('commentsService', function($http, $state, $q) {
-  return {
-    addComment: function(comment, expenseId, callback) {
+applicationServices.factory('AuthService', function($http, $state, $q) {
 
-      var isImportant = (isUndef(comment.isImportant)) ? false : comment.isImportant;
-      var postArray = {
-        commentText: comment.text,
-        expenseId: expenseId,
-        isImportant: isImportant
-      };
-
-      execPostRequest($http, $state, 'addexpensecomment', postArray, function(data) {
-        if (data.status == 'saved') {
-          callback();
-        } else {
-          callback('We got an error here, try later');
-        }
-      });     
-    }
+  var factory = {
+    checkLogin : checkLogin,
+    register : register,
+    signIn : signIn 
   };
+
+  return factory;
+
+  function checkLogin(login, cb) {
+    
+    var params = '&login=' + login;
+
+    execUnAuthRequest($http, $state, 'checkLogin', params, function(data) {
+      if (data.status == 'error') {
+      	cb('Current login is already busy');
+        
+        //$scope.friends = data.friendsList;
+      } else {
+      	cb(null, data);
+      }
+      
+    });
+    
+    
+  }
+
+  function register(login, pass, cb) {
+  	var params = '&login=' + login + '&password=' + pass;
+
+    execUnAuthRequest($http, $state, 'regme', params, function(data) {
+      if (data.status == 'error') {
+      	cb('We got an error here, try later');
+        
+        //$scope.friends = data.friendsList;
+      } else {
+      	cb(null, 'Registration done!');
+      }
+      
+    });
+  }
+
+  function signIn(login, pass, cb) {
+  	var params = '&login=' + login + '&password=' + pass;
+
+    execUnAuthRequest($http, $state, 'signin', params, function(data) {
+      if (data.status == 'error') {
+      	cb(data.msg);
+        
+        //$scope.friends = data.friendsList;
+      } else {
+      	cb(null, data);
+      }
+      
+    });
+  }
+
+ });
+applicationServices.factory('commentsService', function($http, $state, $q) {
+  var factory = {
+    addComment : addComment
+  };
+
+  return factory;
+
+  function addComment (comment, expenseId, callback) {
+    //console.log('new comment commentsService');
+    var isImportant = (isUndef(comment.isImportant)) ? false : comment.isImportant;
+    var postArray = {
+      commentText: comment.text,
+      expenseId: expenseId,
+      isImportant: isImportant
+    };
+
+    execPostRequest($http, $state, 'addexpensecomment', postArray, function(data) {
+      if (data.status == 'saved') {
+        callback();
+      } else {
+        callback('We got an error here, try later');
+      }
+    });     
+  }
+  
+
 });
 applicationServices.factory('eventService', function($http, $state, $q) {
   return {
@@ -125,8 +190,25 @@ applicationServices.factory('eventService', function($http, $state, $q) {
 });
 applicationServices.factory('expensesService', function($http, $state, $q) {
   return {
-    getExpensesList: function(eventId) {
-      var expensesList = [];
+    getExpensesList: function(eventId, apipath, cb) {
+      
+      var params = '&eventId=' + eventId;
+      var apipath = apipath || 'getexpenses';
+
+      console.log('apipath : ' + apipath);
+
+      execGetRequest($http, $state, apipath, params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          cb(null, data);
+        } else {
+          cb('Recieving Expense data error');
+        }
+      });
+
+    },
+
+/*
       var deferred = $q.defer();
 
       var params = '&eventId=' + eventId;
@@ -175,7 +257,7 @@ applicationServices.factory('expensesService', function($http, $state, $q) {
       });
       
       return deferred.promise;
-    },
+    },*/
     getExpense: function(expenseId, callback) {
       var expense = {};
       var members = {};
@@ -379,35 +461,78 @@ applicationServices.factory('feedsService', function($http, $state, $q) {
   };
 });
 applicationServices.factory('friendsService', function($http, $state, $q) {
-  return {
-    getMyFriends: function() {
-      //console.log(1122);
-      var friendsList = [];
-      var deferred = $q.defer();
-      var msg = '';
-      execGetRequest($http, $state, 'getmyfriends', '', function(data) {
-        if (isEmpty(data.friendsList)) {
-          //console.log('friends list empty');
-          msg = ' Contact list is empty';
-        } else {
-          for (friend in data.friendsList) {
-            var currentFriend = data.friendsList[friend];
-            friendsList.push({
-              id: currentFriend.id,
-              name: currentFriend.name,
-              checked: false
-            });
-          }
-          
-          //$scope.friends = data.friendsList;
-        }
-        deferred.resolve({
-          msg: msg,
-          friends: friendsList
-        });
-      });
-      
-      return deferred.promise;
-    }
+
+  var factory = {
+    getMyFriends : getMyFriends,
+    add : add,
+    remove : remove 
   };
+
+  return factory;
+
+  function getMyFriends() {
+      //console.log(1122);
+    var friendsList = [];
+    var deferred = $q.defer();
+    var msg = '';
+    execGetRequest($http, $state, 'getmyfriends', '', function(data) {
+      if (isEmpty(data.friendsList)) {
+        //console.log('friends list empty');
+        msg = ' Contact list is empty';
+      } else {
+        for (friend in data.friendsList) {
+          var currentFriend = data.friendsList[friend];
+          friendsList.push({
+            id: currentFriend.id,
+            name: currentFriend.name,
+            checked: false
+          });
+        }
+        
+        //$scope.friends = data.friendsList;
+      }
+      deferred.resolve({
+        msg: msg,
+        friends: friendsList
+      });
+    });
+    
+    return deferred.promise;
+  }
+
+  function add(cotnact, cb) {
+    if (isUndef(cotnact.id)) {
+      var params = '&friendlogin=' + cotnact.name;
+    } else {
+      var params = '&friendId=' + cotnact.id;
+    }
+    
+               
+      execGetRequest($http, $state, 'addfriend', params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          cb(null, data);
+        } else {
+          cb('Recieving Expense data error');
+        }
+      });
+  
+
+  }
+
+  function remove(contactName, cb) {
+    var params = '&friendId=' + contactName;
+                
+                  //console.log(data);
+                  //getFriendsList();
+               
+      execGetRequest($http, $state, 'delfriend', params, function(data) {
+        //console.log(data);
+        if (data.status == 'ok') {
+          cb(null, data);
+        } else {
+          cb('Recieving Expense data error');
+        }
+      });
+  }
 });
